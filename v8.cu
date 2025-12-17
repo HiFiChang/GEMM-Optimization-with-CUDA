@@ -4,7 +4,6 @@
 #include<stdio.h>
 #include<cuda.h>
 
-#define MY_N 1024
 #define ITERATIONS 10
 #define TILE_WIDTH 64
 
@@ -23,15 +22,6 @@ __global__ void sgemm(float * __restrict__ A, float * __restrict__ B, float * __
     int row_c = ty * 4;
     int col_c = tx * 4;
 
-    int load_a_row = tid / 2;
-    int load_a_col = (tid % 2) * 4;
-
-    int load_b_row = tid / 32;
-    int load_b_col = (tid % 32) * 4;
-
-    const float* src_A = A + (by * TILE_WIDTH * n);
-    const float* src_B = B + (bx * TILE_WIDTH);
-
     float c_reg[4][4] = {0.0f};
     float4 frag_a[2];
     float4 frag_b[2];
@@ -45,18 +35,34 @@ __global__ void sgemm(float * __restrict__ A, float * __restrict__ B, float * __
         int c = (idx % 16) * 4;
 
         int global_r = by * TILE_WIDTH + r;
-        int global_c = 0 * TILE_WIDTH + c;
-        if (global_r < n && global_c < n)
+        int global_c = c;
+        if (global_r < n && global_c + 3 < n)
             ldg_a_reg[i] = reinterpret_cast<const float4*>(&A[global_r * n + global_c])[0];
-        else
+        else if (global_r < n && global_c < n) {
+            ldg_a_reg[i] = make_float4(
+                A[global_r * n + global_c],
+                (global_c + 1 < n) ? A[global_r * n + global_c + 1] : 0.0f,
+                (global_c + 2 < n) ? A[global_r * n + global_c + 2] : 0.0f,
+                (global_c + 3 < n) ? A[global_r * n + global_c + 3] : 0.0f
+            );
+        } else {
             ldg_a_reg[i] = make_float4(0.0f, 0.0f, 0.0f, 0.0f);
+        }
 
-        global_r = 0 * TILE_WIDTH + r;
+        global_r = r;
         global_c = bx * TILE_WIDTH + c;
-        if (global_r < n && global_c < n)
+        if (global_r < n && global_c + 3 < n)
             ldg_b_reg[i] = reinterpret_cast<const float4*>(&B[global_r * n + global_c])[0];
-        else
+        else if (global_r < n && global_c < n) {
+            ldg_b_reg[i] = make_float4(
+                B[global_r * n + global_c],
+                (global_c + 1 < n) ? B[global_r * n + global_c + 1] : 0.0f,
+                (global_c + 2 < n) ? B[global_r * n + global_c + 2] : 0.0f,
+                (global_c + 3 < n) ? B[global_r * n + global_c + 3] : 0.0f
+            );
+        } else {
             ldg_b_reg[i] = make_float4(0.0f, 0.0f, 0.0f, 0.0f);
+        }
     }
 
     int num_tiles = (n + TILE_WIDTH - 1) / TILE_WIDTH;
@@ -88,17 +94,33 @@ __global__ void sgemm(float * __restrict__ A, float * __restrict__ B, float * __
 
                 int global_r = by * TILE_WIDTH + r;
                 int global_c = next_m * TILE_WIDTH + c;
-                if (global_r < n && global_c < n)
+                if (global_r < n && global_c + 3 < n)
                     ldg_a_reg[i] = reinterpret_cast<const float4*>(&A[global_r * n + global_c])[0];
-                else
+                else if (global_r < n && global_c < n) {
+                    ldg_a_reg[i] = make_float4(
+                        A[global_r * n + global_c],
+                        (global_c + 1 < n) ? A[global_r * n + global_c + 1] : 0.0f,
+                        (global_c + 2 < n) ? A[global_r * n + global_c + 2] : 0.0f,
+                        (global_c + 3 < n) ? A[global_r * n + global_c + 3] : 0.0f
+                    );
+                } else {
                     ldg_a_reg[i] = make_float4(0.0f, 0.0f, 0.0f, 0.0f);
+                }
 
                 global_r = next_m * TILE_WIDTH + r;
                 global_c = bx * TILE_WIDTH + c;
-                if (global_r < n && global_c < n)
+                if (global_r < n && global_c + 3 < n)
                     ldg_b_reg[i] = reinterpret_cast<const float4*>(&B[global_r * n + global_c])[0];
-                else
+                else if (global_r < n && global_c < n) {
+                    ldg_b_reg[i] = make_float4(
+                        B[global_r * n + global_c],
+                        (global_c + 1 < n) ? B[global_r * n + global_c + 1] : 0.0f,
+                        (global_c + 2 < n) ? B[global_r * n + global_c + 2] : 0.0f,
+                        (global_c + 3 < n) ? B[global_r * n + global_c + 3] : 0.0f
+                    );
+                } else {
                     ldg_b_reg[i] = make_float4(0.0f, 0.0f, 0.0f, 0.0f);
+                }
             }
         }
 
