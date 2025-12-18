@@ -109,8 +109,9 @@ int main(){
   double time = (time2-time1)/ITERATIONS;
   double flops = 2.0*MY_N*MY_N*MY_N;
   double gflopsPerSecond = flops/(1000000000)/time;
-  double GB = (double)(MY_N)*MY_N*4/1000000000;
-  double GBpS = (double)(MY_N)*MY_N*4/1000000000/time;
+  // Effective Bandwidth: Read A, Read B, Read C, Write C (4 matrices)
+  double GB = 4.0*(double)(MY_N)*MY_N*4/1000000000;
+  double GBpS = 4.0*(double)(MY_N)*MY_N*4/1000000000/time;
   printf("GFLOPS/s=%lf\n",gflopsPerSecond );
   printf("GB/s=%lf\n",GBpS);
   printf("GFLOPS=%lf\n",flops/(1000000000));

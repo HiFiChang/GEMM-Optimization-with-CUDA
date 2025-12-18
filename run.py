@@ -5,7 +5,7 @@ import re
 
 # Configuration
 NVCC_PATH = "/usr/local/cuda-12.0/bin/nvcc"
-VERSIONS = ["v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9"]
+VERSIONS = ["v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v10"]
 N_VALUES = [128, 256, 512, 1024, 2048]
 OUTPUT_DIR = "bin"
 CSV_FILE = os.path.join("results.csv")
@@ -37,12 +37,20 @@ def run_code(exe_file):
 
 def parse_output(output):
     if not output:
-        return None
+        return None, None
     # Look for GFLOPS/s=...
-    match = re.search(r"GFLOPS/s=([0-9.]+)", output)
-    if match:
-        return float(match.group(1))
-    return None
+    gflops = None
+    gbps = None
+    
+    match_gflops = re.search(r"GFLOPS/s=([0-9.]+)", output)
+    if match_gflops:
+        gflops = float(match_gflops.group(1))
+        
+    match_gbps = re.search(r"GB/s=([0-9.]+)", output)
+    if match_gbps:
+        gbps = float(match_gbps.group(1))
+        
+    return gflops, gbps
 
 def main():
     if not os.path.exists(OUTPUT_DIR):
@@ -51,20 +59,20 @@ def main():
     # Initialize CSV
     with open(CSV_FILE, 'w', newline='') as f:
         writer = csv.writer(f)
-        writer.writerow(["Version", "N", "GFLOPS/s"])
+        writer.writerow(["Version", "N", "GFLOPS/s", "GB/s"])
 
     for n in N_VALUES:
         for version in VERSIONS:
             exe_file = compile_code(version, n)
             if exe_file:
                 output = run_code(exe_file)
-                gflops = parse_output(output)
+                gflops, gbps = parse_output(output)
                 if gflops is not None:
-                    print(f"Result: {version} N={n} -> {gflops} GFLOPS/s")
+                    print(f"Result: {version} N={n} -> {gflops} GFLOPS/s, {gbps} GB/s")
                     # Append to CSV
                     with open(CSV_FILE, 'a', newline='') as f:
                         writer = csv.writer(f)
-                        writer.writerow([version, n, gflops])
+                        writer.writerow([version, n, gflops, gbps])
                 else:
                     print(f"Failed to parse output for {version} N={n}")
             else:

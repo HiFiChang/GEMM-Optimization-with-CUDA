@@ -7,7 +7,7 @@ import argparse
 
 def main():
     parser = argparse.ArgumentParser(description="Visualize Performance Results")
-    parser.add_argument("--input", default="bin/results.csv", help="Path to results.csv")
+    parser.add_argument("--input", default="results.csv", help="Path to results.csv")
     parser.add_argument("--output", default="performance_plot.png", help="Output image file")
     args = parser.parse_args()
 
@@ -35,10 +35,9 @@ def main():
 
     # Setup the plot style
     sns.set_theme(style="whitegrid")
-    plt.figure(figsize=(12, 8))
-
-    # Create the plot
-    # Using a marker for each point to make it clearer
+    
+    # Plot GFLOPS/s
+    plt.figure(figsize=(24, 8))
     sns.lineplot(
         data=df,
         x="N",
@@ -48,28 +47,48 @@ def main():
         markers=True,
         dashes=False,
         linewidth=2.5,
-        palette="viridis" # Good for distinct colors
+        palette="viridis"
     )
 
-    plt.title("Performance Comparison (GFLOPS/s vs N)", fontsize=18, pad=20)
-    plt.xlabel("Problem Size (N)", fontsize=14)
-    plt.ylabel("Performance (GFLOPS/s)", fontsize=14)
-    
-    # Adjust x-axis to log scale if N varies by orders of magnitude, 
-    # but linear might be fine for small ranges. 
-    # Let's check the data range. N=[128, 256, 512, 1024, 2048]. 
-    # Linear scale is okay but log2 might be better for power of 2 steps.
+    plt.title("Performance Comparison (GFLOPS/s vs N)", fontsize=28, pad=20)
+    plt.xlabel("Problem Size (N)", fontsize=28)
+    plt.ylabel("Performance (GFLOPS/s)", fontsize=28)
+    plt.tick_params(axis='both', which='major', labelsize=24)
     plt.xscale('log', base=2)
-    
-    # Show values on plot points (optional but helpful)
-    # Using matplotlib directly for annotations could get crowded, so skipping for now 
-    # unless requested.
-
-    plt.legend(title="Version", fontsize=12, title_fontsize=12)
+    plt.legend(title="Version", fontsize=16, title_fontsize=28)
     plt.tight_layout()
 
-    print(f"Saving plot to {args.output}...")
+    print(f"Saving performance plot to {args.output}...")
     plt.savefig(args.output, dpi=300)
+    
+    plt.figure(figsize=(24, 8))
+    sns.lineplot(
+        data=df,
+        x="N",
+        y="GB/s",
+        hue="Version",
+        style="Version",
+        markers=True,
+        dashes=False,
+        linewidth=2.5,
+        palette="viridis"
+    )
+
+    plt.title("Bandwidth Comparison (GB/s vs N)", fontsize=28, pad=20)
+    plt.xlabel("Problem Size (N)", fontsize=28)
+    plt.ylabel("Bandwidth (GB/s)", fontsize=28)
+    plt.tick_params(axis='both', which='major', labelsize=24)
+    plt.xscale('log', base=2)
+    plt.legend(title="Version", fontsize=16, title_fontsize=28)
+    plt.tight_layout()
+    
+    bw_output = args.output.replace(".png", "_bandwidth.png")
+    if bw_output == args.output:
+        bw_output = "bandwidth_plot.png"
+        
+    print(f"Saving bandwidth plot to {bw_output}...")
+    plt.savefig(bw_output, dpi=300)
+
     print("Done!")
 
 if __name__ == "__main__":

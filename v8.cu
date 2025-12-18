@@ -277,7 +277,8 @@ int main(){
 
   double time = (time2-time1)/ITERATIONS;
   double gflops = (2.0*MY_N*MY_N*MY_N*1e-9)/time;
-  double bandwidth = (3.0*MY_N*MY_N*sizeof(float)*1e-9)/time;
+  // Effective Bandwidth: Read A, Read B, Read C, Write C (4 matrices)
+  double bandwidth = (4.0*MY_N*MY_N*sizeof(float)*1e-9)/time;
   printf("GFLOPS/s=%lf\n",gflops);
   printf("GB/s=%lf\n",bandwidth);
   printf("time(s)=%lf\n",time);
