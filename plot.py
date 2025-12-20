@@ -8,7 +8,7 @@ import argparse
 def main():
     parser = argparse.ArgumentParser(description="Visualize Performance Results")
     parser.add_argument("--input", default="results.csv", help="Path to results.csv")
-    parser.add_argument("--output", default="performance_plot.png", help="Output image file")
+    parser.add_argument("--output", default="performance_plot.svg", help="Output image file")
     args = parser.parse_args()
 
     if not os.path.exists(args.input):
@@ -82,9 +82,10 @@ def main():
     plt.legend(title="Version", fontsize=16, title_fontsize=28)
     plt.tight_layout()
     
-    bw_output = args.output.replace(".png", "_bandwidth.png")
-    if bw_output == args.output:
-        bw_output = "bandwidth_plot.png"
+    base, ext = os.path.splitext(args.output)
+    if not ext:
+        ext = ".svg"
+    bw_output = f"{base}_bandwidth{ext}"
         
     print(f"Saving bandwidth plot to {bw_output}...")
     plt.savefig(bw_output, dpi=300)
